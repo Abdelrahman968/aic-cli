@@ -61,6 +61,27 @@ Review keys (interactive): `Enter` commit · `e` edit in `$EDITOR` · `r` regene
 Behaviour notes: `--yes` with secret findings exits 5 before contacting the model. `--yes` without a terminal and with a message that still fails the
 format check exits 1 instead of committing (in a terminal it falls back to the review prompt). Without a terminal and without `--yes`, `commit`/`push` exit 2.
 
+### `aic split`
+Split uncommitted changes into several commits (whole files). `--max-commits <n>` (2-12, default 6), `--hint <text>`, `--json` (print the plan),
+global `--dry-run` (print the plan), `--yes` (no prompts), `--no-scan`.
+Each group is staged in turn (the current index is replaced; file contents never change), secret-scanned, then committed with a generated message.
+A finding stops the run with exit 5 and leaves that group staged. Without a terminal and without `--yes` it exits 2.
+
+### `aic pr`
+Pull request title and description from `base..HEAD` and the three-dot diff. `--base <ref>` (default `origin/HEAD`, `main`, `master`),
+`--template <file>` / `--no-template`, `--conventional`, `--title-max <n>`, `--hint`, `-l/--language`, `--copy`, `--pass-thru` (title, blank line, body on stdout), `--json`.
+Exit 1 when the branch has no commits beyond the base, 4 for an unknown base.
+
+### `aic changelog`
+Release notes from Conventional Commits. Offline unless `--ai`.
+`--from <ref>` (default: latest tag), `--to <ref>` (default `HEAD`), `--release <label>`, `--date`, `--include-all` (chores), `--no-hashes`,
+`--compare` (link the heading to a compare view), `--ai`, `--json`, `--write [file]` (insert into `CHANGELOG.md`, newest first; replaces an
+`## Unreleased` section; refuses to duplicate a version without `--force`).
+
+### `aic hook`
+`install [--force]` · `uninstall` · `status`. Installs a `prepare-commit-msg` hook (respects `core.hooksPath`). It runs `aic hook run` (internal) only when git
+would open the editor with an empty message, and always exits 0.
+
 ### `aic undo`
 `git reset --soft HEAD~1`: the commit disappears, its changes stay staged. Asks first. `--yes` skips the question unless the
 commit is already on the remote (then a person must confirm). Without a terminal and without `--yes` it exits 6.

@@ -14,3 +14,7 @@ export { buildCommitMessages } from './commit/prompt.js';
 export { generateCommitMessage } from './commit/generate.js';
 export { scanDiff, scanStaged, redactContent } from './security/secret-scanner.js';
 export { ExitCode, AicError } from './utils/errors.js';
+export { buildModel, renderSection, parseCommit, prependChangelog } from './changelog/changelog.js';
+export { parsePrOutput, buildPrMessages } from './pr/pr.js';
+export { normalizePlan, heuristicPlan, extractJson } from './split/plan.js';
+export { hookScript, composeMessageFile } from './hook/hook.js';

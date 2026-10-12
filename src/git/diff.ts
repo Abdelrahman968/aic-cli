@@ -141,3 +141,25 @@ export function diffFiles(diff: string): string[] {
   for (const m of diff.matchAll(/^diff --git a\/.+? b\/(.+)$/gm)) if (m[1]) out.push(m[1]);
   return out;
 }
+
+/** Changes on `head` since it forked from `base` (three-dot diff = what a pull request shows). */
+export async function rangeStat(git: Git, base: string, head = 'HEAD', exclude: string[] = []): Promise<FileStat[]> {
+  const r = await git.raw(['diff', '--numstat', '--no-ext-diff', `${base}...${head}`, ...pathspecArgs(exclude)], { allowFail: true });
+  return parseNumstat(r.stdout);
+}
+
+export async function rangeDiff(git: Git, base: string, head = 'HEAD', exclude: string[] = [], context = 1): Promise<string> {
+  const r = await git.raw(['diff', `--unified=${context}`, '--no-color', '--no-ext-diff', `${base}...${head}`, ...pathspecArgs(exclude)], { allowFail: true });
+  return r.stdout.replace(/\r?\n$/, '');
+}
+
+/** Diff of every uncommitted change (staged + unstaged) against HEAD. */
+export async function workingDiff(git: Git, exclude: string[] = [], context = 1): Promise<string> {
+  const r = await git.raw(['diff', 'HEAD', `--unified=${context}`, '--no-color', '--no-ext-diff', ...pathspecArgs(exclude)], { allowFail: true });
+  return r.stdout.replace(/\r?\n$/, '');
+}
+
+export async function workingStat(git: Git, exclude: string[] = []): Promise<FileStat[]> {
+  const r = await git.raw(['diff', 'HEAD', '--numstat', '--no-ext-diff', ...pathspecArgs(exclude)], { allowFail: true });
+  return parseNumstat(r.stdout);
+}

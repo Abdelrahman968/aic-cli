@@ -24,6 +24,7 @@ export type Intent =
   | { kind: 'commit'; push: boolean; all: boolean }
   | { kind: 'generate'; modifiers: RegenModifiers }
   | { kind: 'regenerate'; modifiers: RegenModifiers }
+  | { kind: 'split' }
   | { kind: 'push' }
   | { kind: 'undo' }
   | { kind: 'history'; count: number }
@@ -82,6 +83,7 @@ export function plan(input: string, opts: { hasPending: boolean } = { hasPending
       case 'diff': return { intent: { kind: 'diff', staged: arg !== 'unstaged' }, steps: ['Diff'] };
       case 'commit': return { intent: { kind: 'commit', push: /\bpush\b/.test(arg ?? ''), all: /\b(-a|--all|all)\b/.test(arg ?? '') }, steps: ['Git status', 'Staged diff', 'Commit history'] };
       case 'generate': case 'gen': return { intent: { kind: 'generate', modifiers: parseModifiers(arg ?? '') }, steps: ['Git status', 'Staged diff', 'Commit history'] };
+      case 'split': return { intent: { kind: 'split' }, steps: ['Git status', 'Diff'] };
       case 'push': return { intent: { kind: 'push' }, steps: ['Git status'] };
       case 'regenerate': case 'regen': case 'r': return { intent: { kind: 'regenerate', modifiers: { ...parseModifiers(arg ?? ''), ...(arg && !Object.keys(parseModifiers(arg)).length ? { hint: arg } : {}) } }, steps: ['Staged diff'] };
       case 'undo': return { intent: { kind: 'undo' }, steps: ['Last commit'] };
@@ -101,6 +103,8 @@ export function plan(input: string, opts: { hasPending: boolean } = { hasPending
     || (opts.hasPending && /\b(shorter|longer|more detail|make it|change (the )?(type|scope)|use (type|scope)|with emoji|in (arabic|french|german|spanish|chinese|japanese))\b/.test(lower))) {
     return { intent: { kind: 'regenerate', modifiers: parseModifiers(text) }, steps: ['Staged diff'] };
   }
+
+  if (/\b(split|break (it |this |my changes )?up|separate|divide|group)\b.*\b(changes?|commits?|work|files)\b/.test(lower) && !asksQuestion.test(lower)) return { intent: { kind: 'split' }, steps: ['Git status', 'Diff'] };
 
   if (/\bpush\b/.test(lower) && commitWords.test(lower)) return { intent: { kind: 'commit', push: true, all: /\b(all|everything)\b/.test(lower) }, steps: ['Git status', 'Staged diff', 'Commit history'] };
   if (/^(please )?push\b/.test(lower) || /\bpush (it|my|the|this|to)\b/.test(lower)) return { intent: { kind: 'push' }, steps: ['Git status'] };
@@ -135,6 +139,7 @@ export const SLASH_HELP: Array<[string, string]> = [
   ['/commit [push]', 'Generate a commit message, review it, commit'],
   ['/generate', 'Generate a message without committing'],
   ['/regenerate [hint]', 'Try again, optionally with a hint or "shorter", "type fix", ...'],
+  ['/split', 'Split the changes into several logical commits'],
   ['/push', 'Push the current branch (asks first)'],
   ['/undo', 'Soft-undo the last commit (changes stay staged)'],
   ['/history [n]', 'Recent commits'],

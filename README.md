@@ -31,7 +31,7 @@ $ aic commit
 ## Contents
 
 [Install](#install) · [Quick start](#quick-start) · [Requirements](#requirements) · [Agent mode](#agent-mode) ·
-[Commit workflow](#commit-workflow) · [Providers](#providers) · [Custom providers](#custom-providers) ·
+[Commit workflow](#commit-workflow) · [More workflows](#more-workflows) · [Providers](#providers) · [Custom providers](#custom-providers) ·
 [Configuration](#configuration) · [Commands](#commands) · [Secret scanning](#secret-scanning) ·
 [Privacy](#privacy) · [Safety model](#safety-model) · [Scripting and CI](#scripting-and-ci) ·
 [Coming from aic.ps1](#coming-from-the-powershell-script) · [Troubleshooting](#troubleshooting) ·
@@ -134,6 +134,7 @@ You › commit my changes
 |---|---|
 | `/status` `/diff [unstaged]` `/history [n]` | Inspect the repository |
 | `/commit [push]` `/generate` `/regenerate [hint]` | Commit workflow |
+| `/split` | Split the changes into several logical commits |
 | `/push` `/undo` | Push (asks first) · soft-undo the last commit |
 | `/model [name]` `/provider [id]` `/config` | Switch model or provider without leaving |
 | `/clear` `/help` `/exit` | |
@@ -167,6 +168,79 @@ configurable (see [Configuration](#configuration)).
 
 Lockfiles, minified files and source maps are excluded from the diff by default. Large diffs are shrunk fairly:
 every file gets a share of `maxChars`, small files free budget for big ones.
+
+## More workflows
+
+### Split a messy working tree into several commits
+
+```text
+$ aic split
+
+  ╭─ 1/3 ─────────────────────────────── 2 files
+  │ feat(auth)  rotate refresh tokens
+  │ src/auth/token.ts
+  │ src/auth/refresh.ts
+  ╰─
+  ╭─ 2/3 ─────────────────────────────── 1 file
+  │ fix  fix route handling
+  │ src/api/routes.ts
+  ╰─
+  ╭─ 3/3 ─────────────────────────────── 1 file
+  │ docs  document it
+  │ README.md
+  ╰─
+
+? Create 3 commits? (Use arrow keys)
+❯ Yes, create 3
+  Plan again
+  Cancel
+```
+
+The model proposes the grouping (at most `--max-commits`, default 6); AIC guarantees every changed file lands in exactly
+one commit, falls back to grouping by area if the model's plan is unusable, then stages and commits one group at a time,
+writing a message for each (you can edit, regenerate, skip or stop per group). Each group is secret-scanned before
+anything is sent; a finding stops the run (exit 5) and keeps the commits already made. `--dry-run` and `--json` only print
+the plan. Splitting works on whole files, not hunks. Also available in the chat as `/split`.
+
+### Pull request title and description
+
+```bash
+aic pr                       # compares with origin/HEAD, main or master
+aic pr --base develop --conventional
+aic pr --copy                # title + description to the clipboard
+aic pr --json | jq -r .title      # for gh and other tools
+aic pr --json
+```
+
+Uses the commits and the three-dot diff against the base branch, and fills in `.github/pull_request_template.md` when
+the repository has one (`--template`, `--no-template`). It never invents test results. For `gh`, the JSON form is easier:
+`aic pr --json | jq -r .title`.
+
+### Release notes and CHANGELOG
+
+```bash
+aic changelog                              # since the latest tag, grouped by type, printed to stdout
+aic changelog --release 1.2.0 --write      # insert into CHANGELOG.md (newest first)
+aic changelog --from v1.0.0 --to v1.1.0 --json
+aic changelog --ai --release 1.2.0         # user-facing prose from the same commits
+```
+
+The default mode needs **no model and no network**: it groups Conventional Commits into Features, Bug Fixes, Performance, ...,
+puts breaking changes (`!` or a `BREAKING CHANGE:` footer) first, and hides chores. `--ai` rewrites it as release notes; only commit
+subjects are sent, never diffs.
+
+### `git commit` with a generated message
+
+```bash
+aic hook install
+git add -A
+git commit            # the editor opens with a ready message
+```
+
+Installs a `prepare-commit-msg` hook. It only acts when git would open the editor with an empty message (never for `-m`,
+amend, merge or squash), skips silently when Ollama is down, a cloud provider has not been approved yet, or secrets are
+staged, and **never blocks a commit**. Switch it off once with `AIC_HOOK_DISABLE=1`; remove it with `aic hook uninstall`
+(an existing foreign hook is never overwritten without `--force`, and is restored afterwards).
 
 ## Providers
 
@@ -289,6 +363,10 @@ aic chat              same, explicit
 aic commit            generate, review, commit
 aic generate          generate only, commit nothing
 aic push              commit and push
+aic split             split uncommitted changes into several commits
+aic pr                pull request title and description
+aic changelog         release notes from Conventional Commits
+aic hook              install | uninstall | status (prepare-commit-msg)
 aic undo              soft-undo the last commit
 aic status            repository status (--json)
 aic init              create .aic.json (--global for user config)

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0
+
+- `aic split`: split uncommitted changes into several logical commits, with a validated plan, per-group secret scan, review menus and a heuristic fallback. Also `/split` in the chat.
+- `aic pr`: pull request title and description from the branch, using the repository's PR template when present.
+- `aic changelog`: offline release notes from Conventional Commits (`--write`, `--json`, `--compare`), optional `--ai` prose.
+- `aic hook install|uninstall|status`: `prepare-commit-msg` hook that fills the editor with a generated message and never blocks a commit.
+- `--scopes` flag (allowed scopes), previously only available through `.aic.json`.
+- Fixes: `explain what changed` and `commit and push everything` are routed correctly in the chat; REPL no longer exits after an agent answer.
+
 ## 1.0.0
 
 First release of the Node.js CLI, replacing the PowerShell script (kept in `legacy/aic.ps1`).

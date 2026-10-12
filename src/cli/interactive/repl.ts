@@ -17,6 +17,7 @@ import { changeModel, confirmCommandFactory, pushWithApproval, runCommitFlow } f
 import { ensureReady } from './ready.js';
 import { printDiffColored, renderStatus } from './render.js';
 import { runUndo } from '../commands/undo.js';
+import { runSplit } from '../commands/split.js';
 import type { MessageState } from '../../commit/generate.js';
 import { OllamaProvider } from '../../providers/ollama.js';
 
@@ -129,6 +130,10 @@ export async function runRepl(s: Session, opts: { startOllama?: boolean | undefi
               } finally {
               restore();
             }
+            break;
+          }
+          case 'split': {
+            await runSplit(s, { max: 6, skipReady: true });
             break;
           }
           case 'push': {

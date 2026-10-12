@@ -1,6 +1,6 @@
 {
   "name": "@aic/cli",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Provider-agnostic AI coding agent for Git: Conventional Commit messages, repo analysis and safe Git automation from your terminal.",
   "keywords": [
     "ai",

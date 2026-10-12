@@ -17,6 +17,7 @@ src/
   providers/          types, http/SSE helpers, base, ollama, openai-compatible, anthropic, gemini, registry
   git/                exec (safe runner), status, diff, history, branch, commit
   commit/             prompt, format (normalize/validate), generate (retry loop)
+  split/ pr/ changelog/ hook/   pure cores of the corresponding commands (no UI; unit-tested)
   security/           secret-scanner
   config/             schema (single source of truth), paths, files, global, project, resolve
   utils/              errors/exit codes, redaction, text, process, clipboard

@@ -12,6 +12,10 @@ import { runDoctor } from './commands/doctor.js';
 import { providerAdd, providerList, providerRemove, providerTest, providerUse } from './commands/provider.js';
 import { modelCurrent, modelList, modelTest, modelUse } from './commands/model.js';
 import { configEdit, configGet, configInteractive, configList, configPath, configReset, configSet, configUnset } from './commands/config.js';
+import { hookInstall, hookRun, hookShow, hookUninstall } from './commands/hook.js';
+import { runPr } from './commands/pr.js';
+import { runChangelog } from './commands/changelog.js';
+import { runSplitCommand } from './commands/split.js';
 import { AicError, CancelledError, ExitCode, UsageError } from '../utils/errors.js';
 
 const EXAMPLES = `
@@ -23,6 +27,10 @@ Examples:
   aic commit --dry-run --type fix --scope auth
   aic provider add my-provider --base-url https://example.com/v1 --api-key-env MY_API_KEY
   aic config set provider openai
+  aic split                        turn a messy working tree into several logical commits
+  aic pr                           pull request title and description for this branch
+  aic changelog --release 1.2.0    release notes from Conventional Commits (no model needed)
+  aic hook install                 git commit opens the editor with a generated message
   aic doctor                       check Node, Git, provider, model and configuration
 
 Exit codes: 0 ok, 1 general, 2 usage, 3 provider, 4 git, 5 secret detected, 6 cancelled
@@ -93,6 +101,46 @@ export function buildProgram(): BuiltProgram {
   addCommitOptions(
     program.command('push').description('commit and push (with nothing to commit: push existing commits)'),
   ).action((_o, cmd: Command) => runPush(cmd));
+
+  program.command('split').description('split uncommitted changes into several logical commits (file level)')
+    .option('--max-commits <n>', 'at most this many commits (2-12, default 6)')
+    .option('--hint <text>', 'extra context for the model')
+    .option('--json', 'print the plan as JSON, change nothing')
+    .action((o: { maxCommits?: string; json?: boolean }, cmd: Command) => runSplitCommand(cmd, o));
+
+  program.command('pr').description('write a pull request title and description from the commits on this branch')
+    .option('--base <ref>', 'branch to compare with (default: origin/HEAD, main or master)')
+    .option('--template <file>', 'PR template to fill in (default: .github/pull_request_template.md)')
+    .option('--no-template', 'ignore the repository PR template')
+    .option('--conventional', 'title as type(scope): subject')
+    .option('--title-max <n>', 'max title length (default 72)')
+    .option('--hint <text>', 'extra context for the model')
+    .option('-l, --language <lang>', 'language of the description')
+    .option('--copy', 'copy title and description to the clipboard')
+    .option('--pass-thru', 'print "title, blank line, body" on stdout')
+    .option('--json', 'print {title, body, base, branch} as JSON')
+    .action((o: { base?: string; template?: string | false; conventional?: boolean; titleMax?: string }, cmd: Command) =>
+      runPr(cmd, { ...(o.base ? { base: o.base } : {}), ...(typeof o.template === 'string' ? { template: o.template } : {}), noTemplate: o.template === false, ...(o.conventional ? { conventional: true } : {}), ...(o.titleMax ? { titleMax: o.titleMax } : {}) }));
+
+  program.command('changelog').description('release notes from Conventional Commits (offline by default; --ai for prose)')
+    .option('--from <ref>', 'start after this tag/commit (default: latest tag)')
+    .option('--to <ref>', 'end at this ref (default: HEAD)')
+    .option('--release <label>', 'version heading, e.g. 1.2.0 (default: Unreleased)')
+    .option('--date <YYYY-MM-DD>', 'release date (default: today when --release is given)')
+    .option('--include-all', 'also list chores and style commits')
+    .option('--no-hashes', 'omit commit hashes')
+    .option('--compare', 'link the version heading to a compare view (GitHub/GitLab style remotes)')
+    .option('--ai', 'rewrite as user-facing release notes with the model (sends commit subjects only)')
+    .option('--write [file]', 'insert into CHANGELOG.md (or the given file) instead of printing')
+    .option('--force', 'with --write: replace a section that already exists')
+    .option('--json', 'machine-readable output')
+    .action((o, cmd: Command) => runChangelog(cmd, o));
+
+  const hook = program.command('hook').description('manage the prepare-commit-msg git hook that writes messages for `git commit`').action(function (this: Command) { this.help(); });
+  hook.command('install').description('install the hook in this repository').option('--force', 'replace an existing hook (kept as .aic-backup)').action((o: { force?: boolean }, cmd: Command) => hookInstall(cmd, o));
+  hook.command('uninstall').description('remove the hook (restores a backed-up one)').action((_o, cmd: Command) => hookUninstall(cmd));
+  hook.command('status').description('show whether the hook is installed').action((_o, cmd: Command) => hookShow(cmd));
+  hook.command('run <file> [source] [sha]', { hidden: true }).description('(called by git)').action((file: string, source: string | undefined, _sha: string | undefined, _o, cmd: Command) => hookRun(cmd, file, source));
 
   program.command('undo').description('soft-undo the last commit (changes stay staged)').action((_o, cmd: Command) => runUndoCommand(cmd));
 

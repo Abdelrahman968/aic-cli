@@ -20,6 +20,13 @@ AIC never sends the whole repository. Agent tools `read_file` and `search_files`
 files ignored by `.gitignore`, credential files and your `exclude` patterns, and do not follow symlinks out of the repo. Their output goes
 through the same redaction.
 
+## New workflows and privacy
+
+- `aic split` sends file names, line counts and a shortened diff (redacted, `.env`/key files withheld) once for the plan, then each group's diff for its message; a group with secret findings is never sent.
+- `aic pr` sends commit subjects and the shortened three-dot diff (same redaction). `sendDiff=false` limits it to names and counts; `sendHistory=false` omits commit subjects.
+- `aic changelog` is local. With `--ai` only commit subjects are sent (redacted), never diffs.
+- The commit hook acts only for a provider that is local or that you have already approved, and it skips (not blocks) when secrets are staged.
+
 ## Secret scanner
 
 Runs locally on the **added lines** of the staged diff and on staged paths, before generation and before every commit.
