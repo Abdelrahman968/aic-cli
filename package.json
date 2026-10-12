@@ -42,12 +42,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aic-cli/aic.git"
+    "url": "git+https://github.com/Abdelrahman968/aic-cli/aic.git"
   },
   "bugs": {
-    "url": "https://github.com/aic-cli/aic/issues"
+    "url": "https://github.com/Abdelrahman968/aic-cli/aic/issues"
   },
-  "homepage": "https://github.com/aic-cli/aic#readme",
+  "homepage": "https://github.com/Abdelrahman968/aic-cli/aic#readme",
   "publishConfig": {
     "access": "public"
   },
