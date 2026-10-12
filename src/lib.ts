@@ -1,0 +1,16 @@
+/** Programmatic API (`import { ... } from '@aic/cli'`). The CLI lives in index.ts. */
+export { VERSION } from './version.js';
+export type { AIProvider, ChatMessage, GenerateRequest, GenerateResponse, ModelInfo, StreamChunk, ProviderStatus, Usage } from './providers/types.js';
+export { createProvider, createCustomProvider, listProviderEntries } from './providers/registry.js';
+export { OllamaProvider } from './providers/ollama.js';
+export { OpenAICompatibleProvider } from './providers/openai-compatible.js';
+export { AnthropicProvider } from './providers/anthropic.js';
+export { GeminiProvider } from './providers/gemini.js';
+export { resolveConfig } from './config/resolve.js';
+export { SETTINGS } from './config/schema.js';
+export type { Settings, ProviderDef } from './config/schema.js';
+export { normalizeMessage, validateMessage } from './commit/format.js';
+export { buildCommitMessages } from './commit/prompt.js';
+export { generateCommitMessage } from './commit/generate.js';
+export { scanDiff, scanStaged, redactContent } from './security/secret-scanner.js';
+export { ExitCode, AicError } from './utils/errors.js';
